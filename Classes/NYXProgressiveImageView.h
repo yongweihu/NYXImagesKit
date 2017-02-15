@@ -8,6 +8,8 @@
 //  Caching stuff by raphaelp
 //
 
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @protocol NYXProgressiveImageViewDelegate <NSObject>
 @optional
