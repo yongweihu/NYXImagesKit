@@ -199,7 +199,7 @@ typedef struct
 {
 	[_dataTemp appendData:data];
     
-	const NSUInteger len = [_dataTemp length];
+	const long long len = (long long)[_dataTemp length];
 	CGImageSourceUpdateData(_imageSource, (__bridge CFDataRef)_dataTemp, (len == _expectedSize) ? true : false);
     
 	if (_imageHeight > 0 && _imageWidth > 0)
@@ -296,7 +296,10 @@ typedef struct
 	}
 
 	if (_imageSource)
+	{
 		CFRelease(_imageSource);
+		_imageSource = NULL;
+	}
 	_connection = nil;
 	_url = nil;
 	_downloading = NO;
@@ -314,7 +317,10 @@ typedef struct
 
 	_dataTemp = nil;
 	if (_imageSource)
+	{
 		CFRelease(_imageSource);
+		_imageSource = NULL;
+	}
 	_connection = nil;
 	_url = nil;
 	_downloading = NO;
@@ -328,6 +334,8 @@ typedef struct
 	_caching = NO;
 	_queue = dispatch_queue_create("com.cits.pdlqueue", DISPATCH_QUEUE_SERIAL);
 	_imageOrientation = UIImageOrientationUp;
+	_imageSource = NULL;
+	_dataTemp = nil;
 }
 
 -(CGImageRef)createTransitoryImage:(CGImageRef)partialImage
@@ -356,7 +364,7 @@ typedef struct
 		return @"";
 
     unsigned char result[CC_MD5_DIGEST_LENGTH];
-    CC_MD5(concat_str, strlen(concat_str), result);
+    CC_MD5(concat_str, (CC_LONG)strlen(concat_str), result);
 
     NSMutableString* hash = [[NSMutableString alloc] init];
     for (unsigned int i = 0; i < CC_MD5_DIGEST_LENGTH; i++)

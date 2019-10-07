@@ -302,7 +302,7 @@ static int16_t __s_unsharpen_kernel_3x3[9] = {
 	void* outt = malloc(n);
 	vImage_Buffer src = {data, height, width, bytesPerRow};
 	vImage_Buffer dest = {outt, height, width, bytesPerRow};
-	vImageConvolveWithBias_ARGB8888(&src, &dest, NULL, 0, 0, __s_emboss_kernel_3x3, 3, 3, 1/*divisor*/, bias, NULL, kvImageCopyInPlace);
+	vImageConvolveWithBias_ARGB8888(&src, &dest, NULL, 0, 0, __s_emboss_kernel_3x3, 3, 3, 1/*divisor*/, (int32_t)bias, NULL, kvImageCopyInPlace);
 	
 	memcpy(data, outt, n);
 	
@@ -395,10 +395,10 @@ static int16_t __s_unsharpen_kernel_3x3[9] = {
 {
 	/* const UInt8 luminance = (red * 0.2126) + (green * 0.7152) + (blue * 0.0722); // Good luminance value */
 	/// Create a gray bitmap context
-	const size_t width = (size_t)self.size.width;
-	const size_t height = (size_t)self.size.height;
+	const size_t width = (size_t)(self.size.width * self.scale);
+	const size_t height = (size_t)(self.size.height * self.scale);
     
-    CGRect imageRect = CGRectMake(0, 0, self.size.width, self.size.height);
+    CGRect imageRect = CGRectMake(0, 0, width, height);
     
 	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
 	CGContextRef bmContext = CGBitmapContextCreate(NULL, width, height, 8/*Bits per component*/, width * kNyxNumberOfComponentsPerGreyPixel, colorSpace, (CGBitmapInfo)kCGImageAlphaNone);
@@ -415,8 +415,15 @@ static int16_t __s_unsharpen_kernel_3x3[9] = {
 
 	/// Create an image object from the context
 	CGImageRef grayscaledImageRef = CGBitmapContextCreateImage(bmContext);
-    UIImage *grayscaled = [UIImage imageWithCGImage:grayscaledImageRef scale:self.scale orientation:self.imageOrientation];
-        
+    
+    // Preserve alpha channel by creating context with 'alpha only' values
+    // and using it as a mask for previously generated `grayscaledImageRef`
+    // based on: http://incurlybraces.com/convert-transparent-image-to-grayscale-in-ios.html
+    bmContext = CGBitmapContextCreate(nil, width, height, 8, width, nil, (CGBitmapInfo) kCGImageAlphaOnly);
+    CGContextDrawImage(bmContext, imageRect, [self CGImage]);
+    CGImageRef mask = CGBitmapContextCreateImage(bmContext);
+    UIImage *grayscaled = [UIImage imageWithCGImage:CGImageCreateWithMask(grayscaledImageRef, mask) scale:self.scale orientation:self.imageOrientation];
+    
 	/// Cleanup
 	CGImageRelease(grayscaledImageRef);
 	CGContextRelease(bmContext);
@@ -624,7 +631,7 @@ static int16_t __s_unsharpen_kernel_3x3[9] = {
 	void* outt = malloc(n);
 	vImage_Buffer src = {data, height, width, bytesPerRow};
 	vImage_Buffer dest = {outt, height, width, bytesPerRow};
-	vImageConvolveWithBias_ARGB8888(&src, &dest, NULL, 0, 0, __s_sharpen_kernel_3x3, 3, 3, 1/*divisor*/, bias, NULL, kvImageCopyInPlace);
+	vImageConvolveWithBias_ARGB8888(&src, &dest, NULL, 0, 0, __s_sharpen_kernel_3x3, 3, 3, 1/*divisor*/, (int32_t)bias, NULL, kvImageCopyInPlace);
 	
 	memcpy(data, outt, n);
 	
@@ -665,7 +672,7 @@ static int16_t __s_unsharpen_kernel_3x3[9] = {
 	void* outt = malloc(n);
 	vImage_Buffer src = {data, height, width, bytesPerRow};
 	vImage_Buffer dest = {outt, height, width, bytesPerRow};
-	vImageConvolveWithBias_ARGB8888(&src, &dest, NULL, 0, 0, __s_unsharpen_kernel_3x3, 3, 3, 9/*divisor*/, bias, NULL, kvImageCopyInPlace);
+	vImageConvolveWithBias_ARGB8888(&src, &dest, NULL, 0, 0, __s_unsharpen_kernel_3x3, 3, 3, 9/*divisor*/, (int32_t)bias, NULL, kvImageCopyInPlace);
 	
 	memcpy(data, outt, n);
 	
